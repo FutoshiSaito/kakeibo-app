@@ -1,0 +1,8 @@
+<select name="user_id" class="form-select">
+    {% for user in users %}
+        <option value="{{ user[0] }}"
+            {% if selected_user == user[0]|string %}selected{% endif %}>
+            {{ user[1] }}
+        </option>
+    {% endfor %}
+</select>

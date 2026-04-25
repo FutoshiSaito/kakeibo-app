@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}カテゴリ登録{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">カテゴリ登録</h1>
+
+<div class="card p-4 shadow-sm">
+    <form action="/add-category" method="post">
+
+        <div class="mb-3">
+            <label class="form-label">カテゴリの所有者</label>
+            <select name="user_id" class="form-control">
+                <option value="">共通</option>
+                {% for user in users %}
+                    <option value="{{ user[0] }}">{{ user[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">カテゴリ名</label>
+            <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">登録する</button>
+    </form>
+</div>
+{% endblock %}
