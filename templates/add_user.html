@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}月別集計{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">ユーザー登録</h1>
+
+<div class="card p-4 shadow-sm">
+    <form action="/add-user" method="post">
+
+        <div class="mb-3">
+            <label class="form-label">ユーザー名</label>
+            <input type="text" name="username" class="form-control" required>
+        </div>
+
+        <button type="submit" class="button btn-primary">登録する</button>
+        <button type="button" class="button btn-secondary" onclick="location.href='/'">戻る</button>
+    </form>
+</div>
+{% endblock %}

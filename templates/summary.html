@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}月別集計結果{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ year }}年{{ month }}月の集計</h1>
+
+<div class="card p-4 shadow-sm">
+
+    <table class="table table-bordered">
+        <tbody>
+            <tr>
+                <th class="table-dark">支出合計</th>
+                <td>{{ "{:,}".format(expense_total) }} 円</td>
+            </tr>
+            <tr>
+                <th class="table-dark">収入合計</th>
+                <td>{{ "{:,}".format(income_total) }} 円</td>
+            </tr>
+            <tr>
+                <th class="table-dark">差額（収支）</th>
+                <td>{{ "{:,}".format(balance) }} 円</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="d-frex mt-3">
+        <button type="button" class="btn btn-secondary me-2" onclick="location.href='/select-month'">年月を選び直す</button>
+        <button type="button" class="btn btn-info" onclick="location.href='/list'">一覧へ戻る</button>
+    </div>
+</div>
+{% endblock %}
