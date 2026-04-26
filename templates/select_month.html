@@ -3,32 +3,50 @@
 {% block title %}月別集計{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">月別集計</h1>
 
-<div class="card p-4 shadow-sm">
+<!-- 🌸 見出し（桜餅ピンク × かわいらしい） -->
+<div class="text-center mb-4">
+    <h1 style="color:#F7DDE7; font-weight:700;">
+        🌸 月別集計
+    </h1>
+    <p style="color:#A27A85; font-size:14px;">
+        見たい月と人を選んでね。
+    </p>
+</div>
+
+<!-- 🌸 白いカード（ふわっと影） -->
+<div class="card p-4 shadow-sm" style="border-radius:14px;">
+
     <form action="/monthly-summary" method="get" class="mb-3">
+
+        <!-- ユーザー選択 -->
         <div class="mb-3">
-            <label class="form-label">ユーザー</label>
-            <select name="user_id" class="form-select">
+            <label class="form-label" style="color:#A27A85; font-weight:600;">ユーザー</label>
+            <select name="user_id" class="form-select" style="border-radius:10px;">
                 <option value="" {% if selected_user == "" %}selected{% endif %}>全ユーザ</option>
 
                 {% for user in users %}
                     <option value="{{ user[0] }}"
                     {% if selected_user == user[0]|string %}selected{% endif %}>
-                    {{ user[1] }}</option>
+                        {{ user[1] }}
+                    </option>
                 {% endfor %}
             </select>
         </div>
 
+        <!-- 年月選択 -->
         <div class="mb-3">
-            <label class="form-label">年月を選択</label>
-            <input type="month" name="month" class="form-control" required>
+            <label class="form-label" style="color:#A27A85; font-weight:600;">年月を選択</label>
+            <input type="month" name="month" class="form-control" required style="border-radius:10px;">
         </div>
-        
+
+        <!-- ボタン -->
         <div class="d-flex mt-3">
-            <button type="submit" class="btn btn-primary me-2">集計する</button>
+            <button type="submit" class="btn btn-primary me-2 px-4">集計する</button>
             <button type="button" class="btn btn-secondary" onclick="location.href='/list'">一覧へ戻る</button>
         </div>
+
     </form>
 </div>
+
 {% endblock %}

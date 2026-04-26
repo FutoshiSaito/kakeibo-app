@@ -3,12 +3,24 @@
 {% block title %}家計簿一覧{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">家計簿一覧</h1>
+<div class="text-center mb-4">
+    <h1 style="color:#F7DDE7; font-weight:700;">
+        🌸 家計簿一覧
+    </h1>
+    <p style="color:#A27A85; font-size:14px;">
+        今日もお疲れさま。ゆっくり見ていってね。
+    </p>
+</div>
 
-<div class="card shadow-sm p-4">
+<!-- 🌸 白いカード（ふわっと影） -->
+<div class="card p-4" style="border-radius:14px;">
+
+    <!-- 人別選択（丸み＋桜色） -->
     <form method="get" action="/list" class="mb-3">
-        <div class="input-group" style="width: 260px;">
-            <select name="user_id" class="form-select" style="width: 200px; display: inline-block;">
+        <label class="form-label" style="color:#A27A85; font-weight:600;">人を選ぶ</label>
+
+        <div class="input-group" style="max-width: 260px;">
+            <select name="user_id" class="form-select" style="border-radius:10px;">
                 <option value="">全ユーザ</option>
                 {% for user in users %}
                     <option value="{{ user.id }}"
@@ -21,9 +33,10 @@
         </div>
     </form>
 
+    <!-- 🌸 一覧テーブル（淡い桜色のヘッダー） -->
     <div class="table-responsive">
-        <table class="table table-striped table-borderd">
-            <thead class="table-dark">
+        <table class="table table-hover align-middle">
+            <thead style="background-color:#FCEFF4; color:#A27A85;">
                 <tr>
                     <th>日付</th>
                     <th>人別</th>
@@ -44,7 +57,7 @@
                         <td class="text-end">{{ "{:,}".format(row.amount) }}</td>
                         <td>{{ row.category_name }}</td>
                         <td>{{ row.memo }}</td>
-                        <td><a href="/edit/{{ row.id }}">編集</a></td>
+                        <td><a href="/edit/{{ row.id }}" class="btn btn-secondary btn-sm">編集</a></td>
                     </tr>
             {% endfor %}
             </tbody>

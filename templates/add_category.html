@@ -2,27 +2,55 @@
 {% block title %}カテゴリ登録{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">カテゴリ登録</h1>
 
-<div class="card p-4 shadow-sm">
+<!-- 🌸 見出し（桜餅ピンク × かわいらしい） -->
+<div class="text-center mb-4">
+    <h1 style="color:#F7DDE7; font-weight:700;">
+        🌸 カテゴリ登録
+    </h1>
+    <p style="color:#A27A85; font-size:14px;">
+        新しいカテゴリを追加できるよ。
+    </p>
+</div>
+
+<!-- 🌸 白いカード（ふわっと影） -->
+<div class="card p-4 shadow-sm" style="border-radius:14px;">
+
     <form action="/add-category" method="post">
 
+        <!-- 所有者 -->
         <div class="mb-3">
-            <label class="form-label">カテゴリの所有者</label>
-            <select name="user_id" class="form-control">
+            <label class="form-label" style="color:#A27A85; font-weight:600;">
+                カテゴリの所有者
+            </label>
+            <select name="user_id" class="form-control" style="border-radius:10px;">
                 <option value="">共通</option>
                 {% for user in users %}
                     <option value="{{ user[0] }}">{{ user[1] }}</option>
                 {% endfor %}
             </select>
         </div>
-        
+
+        <!-- カテゴリ名 -->
         <div class="mb-3">
-            <label class="form-label">カテゴリ名</label>
-            <input type="text" name="name" class="form-control" required>
+            <label class="form-label" style="color:#A27A85; font-weight:600;">
+                カテゴリ名
+            </label>
+            <input type="text" name="name" class="form-control"
+                   required style="border-radius:10px;">
         </div>
 
-        <button type="submit" class="btn btn-primary">登録する</button>
+        <!-- ボタン -->
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary px-4">登録する</button>
+            <button type="button" class="btn btn-secondary ms-2"
+                    onclick="location.href='/categories'">
+                一覧へ戻る
+            </button>
+        </div>
+
     </form>
+
 </div>
+
 {% endblock %}
