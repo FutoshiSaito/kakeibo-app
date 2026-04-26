@@ -42,7 +42,7 @@
                         <td>{{ row.username or ''}}</td>
                         <td>{{ row.type }}</td>
                         <td class="text-end">{{ "{:,}".format(row.amount) }}</td>
-                        <td>{{ row.category }}</td>
+                        <td>{{ row.category_name }}</td>
                         <td>{{ row.memo }}</td>
                         <td><a href="/edit/{{ row.id }}">編集</a></td>
                     </tr>
