@@ -3,46 +3,60 @@
 {% block title %}月別集計{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">月別集計</h1>
 
-<div class="card p-4 shadow-sm">
+<!-- 🌸 見出し（桜餅ピンク × かわいらしい） -->
+<div class="text-center mb-4">
+    <h1 style="color:#F7DDE7; font-weight:700;">
+        🌸 月別集計
+    </h1>
+    <p style="color:#A27A85; font-size:14px;">
+        {{ month }} の家計をいっしょに見てみよう。
+    </p>
+</div>
 
-    <h4 class="mb-3">
-        {{ month }} の集計
+<!-- 🌸 白いカード（ふわっと影） -->
+<div class="card p-4 shadow-sm" style="border-radius:14px;">
+
+    <!-- タイトル部分 -->
+    <h4 class="mb-3" style="color:#A27A85; font-weight:600;">
+        {{ month }} の集計  
         {% if username %}
-        ({{ username }})
+            ({{ username }})
         {% else %}
-        (全ユーザー)
+            (全ユーザー)
         {% endif %}
     </h4>
 
+    <!-- 期間 -->
     <p><strong>集計期間：</strong> {{ start_date.strftime('%Y-%m-%d') }} ～ {{ end_date.strftime('%Y-%m-%d') }}</p>
 
-    <div class="mb-4">
+    <!-- 合計 -->
+    <div class="mb-4" style="color:#7A4F5A;">
         <p><strong>収入合計：</strong> {{ "{:,}".format(income_total) }} 円</p>
         <p><strong>支出合計：</strong> {{ "{:,}".format(expense_total) }} 円</p>
-        <p><strong>収支　　：</strong> 
+        <p><strong>収支：</strong>
             {% if balance >= 0 %}
-                <span class="text-primary">{{ "{:,}".format(balance) }} 円</span>
+                <span style="color:#7A4F5A; font-weight:600;">{{ "{:,}".format(balance) }} 円</span>
             {% else %}
-                <span class="text-danger">{{ "{:,}".format(balance) }} 円</span>
+                <span style="color:#D36B8A; font-weight:600;">{{ "{:,}".format(balance) }} 円</span>
             {% endif %}
         </p>
     </div>
 
+    <!-- テーブル -->
     {% if rows %}
-        <table class="table table-bordered table-striped">
-            <thead class="table-dark">
+        <table class="table table-hover align-middle">
+            <thead style="background-color:#FCEFF4; color:#A27A85;">
                 <tr>
                     <th>カテゴリ</th>
-                    <th>合計金額</th>
+                    <th class="text-end">合計金額</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in rows %}
                 <tr>
                     <td>{{ row[0] }}</td>
-                    <td>{{ "{:,}".format(row[1]) }}</td>
+                    <td class="text-end">{{ "{:,}".format(row[1]) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -51,9 +65,12 @@
         <p class="text-muted">データがありません。</p>
     {% endif %}
 
-    <div class="mt-3">
-        <button class="btn btn-secondary" onclick="location.href='/select-month'">月を選び直す</button>
+    <!-- ボタン -->
+    <div class="mt-3 d-flex">
+        <button class="btn btn-secondary me-2" onclick="location.href='/select-month'">月を選び直す</button>
         <button class="btn btn-outline-secondary" onclick="location.href='/list'">一覧へ戻る</button>
     </div>
+
 </div>
+
 {% endblock %}

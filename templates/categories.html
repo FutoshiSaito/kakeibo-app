@@ -2,22 +2,35 @@
 {% block title %}カテゴリ一覧{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">カテゴリ一覧</h1>
 
-<div class="card shadow-sm p-4">
+<!-- 🌸 見出し（桜餅ピンク × かわいらしい） -->
+<div class="text-center mb-4">
+    <h1 style="color:#F7DDE7; font-weight:700;">
+        🌸 カテゴリ一覧
+    </h1>
+    <p style="color:#A27A85; font-size:14px;">
+        カテゴリの管理ができるよ。
+    </p>
+</div>
 
+<!-- 🌸 白いカード（ふわっと影） -->
+<div class="card shadow-sm p-4" style="border-radius:14px;">
+
+    <!-- 追加ボタン（桜餅ピンク） -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <a href="/add-category" class="btn btn-primary">カテゴリを追加</a>
+        <a href="/add-category" class="btn btn-primary px-3">＋ カテゴリを追加</a>
     </div>
 
-    <table class="table table-striped">
-        <thead class="table-dark">
+    <!-- テーブル（淡い桜色ヘッダー） -->
+    <table class="table table-hover align-middle">
+        <thead style="background-color:#FCEFF4; color:#A27A85;">
             <tr>
                 <th>カテゴリ名</th>
-                <th>ユーザー</th>
+                <th>人別</th>
                 <th>操作</th>
             </tr>
         </thead>
+
         <tbody>
             {% for cat in categories %}
             <tr>
@@ -30,8 +43,8 @@
                     {% endif %}
                 </td>
                 <td>
-                    <a href="/delete-category/{{ cat[0] }}" 
-                       class="btn btn-danger btn-sm"
+                    <a href="/delete-category/{{ cat[0] }}"
+                       class="btn btn-danger btn-sm px-3"
                        onclick="return confirm('本当に削除しますか？');">
                        削除
                     </a>
@@ -40,5 +53,7 @@
             {% endfor %}
         </tbody>
     </table>
+
 </div>
+
 {% endblock %}
