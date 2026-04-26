@@ -21,7 +21,7 @@ def index():
 @app.route("/add", methods=["POST"])
 def add():
     date = request.form["date"]
-    category = request.form["category"]
+    category_id = request.form["category_id"]
     amount = request.form["amount"]
     type_ = request.form["type"]
     memo = request.form["memo"]
@@ -31,10 +31,10 @@ def add():
     cursor = conn.cursor()
 
     sql = """
-        INSERT INTO transactions (user_id, date, category, amount, type, memo)
+        INSERT INTO transactions (user_id, date, category_id, amount, type, memo)
         VALUES (%s, %s, %s, %s, %s, %s)
         """
-    cursor.execute(sql, (user_id, date, category, amount, type_, memo))
+    cursor.execute(sql, (user_id, date, category_id, amount, type_, memo))
     conn.commit()
 
     cursor.close()
@@ -100,9 +100,10 @@ def list_records():
 
 
     cursor.execute("""
-                    SELECT t.id, t.date, t.type, t.amount, t.category, t.memo, u.username
+                    SELECT t.id, t.date, t.type, t.amount, t.memo, u.username, c.name AS category_name
                     FROM transactions t
                     LEFT JOIN users u ON t.user_id = u.id
+                    LEFT JOIN categories c ON t.category_id = c.id
                     WHERE (t.user_id = %s OR %s IS NULL)
                     ORDER BY t.date DESC
                     """, (selected_user, selected_user))
@@ -179,18 +180,22 @@ def monthly_summary():
     if user_id:
         # 特定ユーザーの集計
         cursor.execute("""
-                       SELECT category, SUM(amount)
-                       FROM transactions
-                       WHERE date BETWEEN %s AND %s AND user_id = %s
-                       GROUP BY category
+                       SELECT c.name AS category_name, SUM(t.amount)
+                       FROM transactions t
+                       LEFT JOIN categories c ON t.category_id = c.id
+                       WHERE t.date BETWEEN %s AND %s AND t.user_id = %s
+                       GROUP BY t.category_id
+                       ORDER BY category_name
                        """, (start_date, end_date, user_id))
     else:
         #全ユーザーの集計
         cursor.execute("""
-                       SELECT category, SUM(amount)
-                       FROM transactions
+                       SELECT c.name AS category_name, SUM(t.amount)
+                       FROM transactions t
+                       LEFT JOIN categories c ON t.category_id = c.id
                        WHERE date BETWEEN %s AND %s
-                       GROUP BY category
+                       GROUP BY t.category_id
+                       ORDER BY category_name
                        """, (start_date, end_date))
         
     rows = cursor.fetchall()
@@ -249,16 +254,18 @@ def edit(id):
     # 編集対象の1件を取得
 
     cursor.execute("""
-                   SELECT id, date, category, amount, type, memo, user_id
+                   SELECT id, date, category_id, amount, type, memo, user_id
                    FROM transactions
                    WHERE id = %s
                    """, (id,))
     row = cursor.fetchone()
+    # row = (id, date, category_id, amount, type, memo, user_id)
 
     # カテゴリ一覧を取得（共通＋該当ユーザーのカテゴリ）
     cursor.execute("""
                    SELECT id, name FROM categories
                    WHERE user_id IS NULL OR user_id = %s
+                   ORDER BY name
                    """, (row[6],)) # row[6] = user_id
     categories = cursor.fetchall()
 
@@ -269,8 +276,11 @@ def edit(id):
 
 @app.route("/update/<int:id>", methods=["POST"])
 def update(id):
+    
+    print("FORM DATA:", request.form)
+
     date = request.form["date"]
-    category = request.form["category"]
+    category_id = request.form["category_id"]
     amount = request.form["amount"]
     type_ = request.form["type"]
     memo = request.form["memo"]
@@ -281,12 +291,12 @@ def update(id):
     cursor.execute("""
                    UPDATE transactions
                    SET date = %s,
-                   category = %s,
-                   amount = %s,
-                   type = %s,
-                   memo = %s
+                       category_id = %s,
+                       amount = %s,
+                       type = %s,
+                       memo = %s
                    WHERE id = %s
-                   """, (date, category, amount, type_, memo, id))
+                   """, (date, category_id, amount, type_, memo, id))
     
     conn.commit()
     cursor.close()
