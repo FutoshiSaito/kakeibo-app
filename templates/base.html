@@ -113,6 +113,22 @@
             pointer-events: none;
         }
 
+        /* 花アイコンの共通スタイル */
+        .page-icon {
+            width: 70px;   /* ← 少し大きめにした */
+            height: 70px;
+            display: inline-block;
+            background-size: contain;
+            background-repeat: no-repeat;
+            opacity: 0.95; /* ← 少し濃くして存在感UP */
+            transform: translateY(-6px) rotate(180deg); /* ← これで下に6pxずらす */
+        }
+
+        .icon-violet {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="%238A7CC5" stroke-width="0.8" fill="none"><path d="M12 3 C8 4, 10 7, 12 9 C14 7, 16 4, 12 3Z" fill="%238A7CC5"/><path d="M7 6 C8 5, 11 6, 12 9 C10 10, 7 9, 7 6Z" fill="%238A7CC5"/><path d="M12 9 C13 6, 16 5, 17 6 C17 9, 14 10, 12 9Z" fill="%238A7CC5"/><path d="M8 13 C7 11, 10 9, 12 10 C13 12, 10 14, 8 13Z" fill="%238A7CC5"/><path d="M12 10 C14 9, 17 11, 16 13 C14 14, 11 12, 12 10Z" fill="%238A7CC5"/><circle cx="12" cy="9" r="1.8" fill="%23E2DFF1"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
         </style>
     </head>
 
@@ -124,7 +140,7 @@
                 <!-- ロゴ（桜餅ピンク） -->
                 <a class="navbar-brand" href="/" 
                 style="color:#7A4F5A; font-weight:700; font-size:20px;">
-                    🌸 家計簿
+                    ☘️ 家計簿
                 </a>
 
                 <!-- メニュー -->
@@ -140,6 +156,12 @@
         </nav>
 
         <div class="container mt-4">
+
+            <h1 class="page-title" style="display:flex; align-items:center; gap:6px;">
+                {% block page_icon %}{% endblock %}
+                {% block page_title %}{% endblock %}
+            </h1>
+
             {% block content %}
             {% endblock %}
         </div>
