@@ -53,7 +53,13 @@
                     <tr>
                         <td>{{ row.date }}</td>
                         <td>{{ row.username or ''}}</td>
-                        <td>{{ row.type }}</td>
+                        <td>
+                            {% if row.category_type == '収入' %}
+                                <span style="color:#4CAF50; font-weight:600;">収入</span>
+                            {% else %}
+                                <span style="color:#E57373; font-weight:600;">支出</span>
+                            {% endif %}
+                        </td>
                         <td class="text-end">{{ "{:,}".format(row.amount) }}</td>
                         <td>{{ row.category_name }}</td>
                         <td>{{ row.memo }}</td>

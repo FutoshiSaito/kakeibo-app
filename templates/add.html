@@ -41,7 +41,22 @@
     <!-- 日付 -->
     <div class="mb-3">
         <label class="form-label" style="color:#A27A85; font-weight:600;">日付</label>
-        <input type="date" name="date" class="form-control" required style="border-radius:10px;">
+        <input type="date" name="date" class="form-control"
+                value="{{ selected_date }}" required style="border-radius:10px;">
+    </div>
+
+    <!-- 種別（収入 / 支出） -->
+    <div class="mb-3">
+        <label class="form-label" style="color:#A27A85; font-weight:600;">種別</label>
+        <select name="type" class="form-control" style="border-radius:10px;"
+                onchange="
+                    const date = document.querySelector('input[name=date]').value;
+                    location.href = '/add?user_id={{ selected_user_id }}&type=' + this.value + '&date=' + date;
+                ">
+            <option value="">選択してください</option>
+            <option value="支出" {% if selected_type == '支出' %}selected{% endif %}>支出</option>
+            <option value="収入" {% if selected_type == '収入' %}selected{% endif %}>収入</option>
+        </select>
     </div>
 
     <!-- カテゴリ -->
@@ -59,15 +74,6 @@
     <div class="mb-3">
         <label class="form-label" style="color:#A27A85; font-weight:600;">金額</label>
         <input type="number" name="amount" class="form-control" placeholder="例：1200" required style="border-radius:10px;">
-    </div>
-
-    <!-- 入／出 -->
-    <div class="mb-3">
-        <label class="form-label" style="color:#A27A85; font-weight:600;">入／出</label>
-        <select name="type" class="form-select" required style="border-radius:10px;">
-            <option value="支出">支出</option>
-            <option value="収入">収入</option>
-        </select>
     </div>
 
     <!-- メモ -->

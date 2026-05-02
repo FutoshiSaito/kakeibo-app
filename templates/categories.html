@@ -26,6 +26,7 @@
         <thead style="background-color:#FCEFF4; color:#A27A85;">
             <tr>
                 <th>カテゴリ名</th>
+                <th>種別</th>   <!-- ★ 追加 -->
                 <th>人別</th>
                 <th>操作</th>
             </tr>
@@ -34,7 +35,19 @@
         <tbody>
             {% for cat in categories %}
             <tr>
+                <!-- カテゴリ名 -->
                 <td>{{ cat[1] }}</td>
+
+                <!-- ★ 種別（収入 / 支出） -->
+                <td>
+                    {% if cat[3] == '収入' %}
+                        <span style="color:#4CAF50; font-weight:600;">収入</span>
+                    {% else %}
+                        <span style="color:#E57373; font-weight:600;">支出</span>
+                    {% endif %}
+                </td>
+
+                <!-- 人別 -->
                 <td>
                     {% if cat[2] %}
                         {{ cat[2] }}
@@ -42,6 +55,8 @@
                         共通
                     {% endif %}
                 </td>
+
+                <!-- 操作 -->
                 <td>
                     <a href="/delete-category/{{ cat[0] }}"
                        class="btn btn-danger btn-sm px-3"
