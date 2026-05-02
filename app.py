@@ -23,28 +23,35 @@ def add():
     date = request.form["date"]
     category_id = request.form["category_id"]
     amount = request.form["amount"]
-    type_ = request.form["type"]
     memo = request.form["memo"]
-    user_id = request.form['user_id']
+    user_id = request.form["user_id"]
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    sql = """
-        INSERT INTO transactions (user_id, date, category_id, amount, type, memo)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        """
-    cursor.execute(sql, (user_id, date, category_id, amount, type_, memo))
-    conn.commit()
+    # ★ カテゴリから type（収入/支出）を取得
+    cursor.execute("SELECT type FROM categories WHERE id = %s", (category_id,))
+    category_type = cursor.fetchone()[0]
 
+    # ★ INSERT（type は category_type を使う）
+    sql = """
+        INSERT INTO transactions (user_id, date, category_id, amount, memo)
+        VALUES (%s, %s, %s, %s, %s)
+    """
+    cursor.execute(sql, (user_id, date, category_id, amount, memo))
+
+    conn.commit()
     cursor.close()
     conn.close()
 
     return redirect("/list")
 
+
 @app.route("/add", methods=["GET"])
 def add_form():
     user_id = request.args.get("user_id", None)
+    type_value = request.args.get("type", "None")
+    date_value = request.args.get("date", "")
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -54,11 +61,28 @@ def add_form():
     users = cursor.fetchall()
 
     #カテゴリ一覧
-    if user_id:
+    if user_id and type_value:
         cursor.execute("""
                     SELECT id, name FROM categories
-                    WHERE user_id IS NULL OR user_id = %s
-                    """, (user_id,))
+                    WHERE (user_id IS NULL OR user_id = %s) AND type = %s
+                    ORDER BY name
+                    """, (user_id, type_value))
+    
+    elif user_id:
+        cursor.execute("""
+            SELECT id, name FROM categories
+            WHERE user_id IS NULL OR user_id = %s
+            ORDER BY name
+        """, (user_id,))
+
+    elif type_value:
+        cursor.execute("""
+            SELECT id, name FROM categories
+            WHERE user_id IS NULL
+              AND type = %s
+            ORDER BY name
+        """, (type_value,))
+
     else:
         cursor.execute("""
                        SELECT id, name FROM categories
@@ -70,7 +94,14 @@ def add_form():
     cursor.close()
     conn.close()
 
-    return render_template("add.html", users=users, categories=categories, selected_user_id=user_id)
+    return render_template(
+        "add.html",
+        users=users,
+        categories=categories,
+        selected_user_id=user_id,
+        selected_type=type_value,
+        selected_date=date_value
+        )
 
 @app.route("/list", methods=["GET", "POST"])
 def list_records():
@@ -98,17 +129,21 @@ def list_records():
     else:
         selected_user = int(selected_user)
 
-
     cursor.execute("""
-                    SELECT t.id, t.date, t.type, t.amount, t.memo, u.username, c.name AS category_name
-                    FROM transactions t
-                    LEFT JOIN users u ON t.user_id = u.id
-                    LEFT JOIN categories c ON t.category_id = c.id
-                    WHERE (t.user_id = %s OR %s IS NULL)
-                    ORDER BY t.date DESC
-                    """, (selected_user, selected_user))
-
-    
+        SELECT 
+            t.id,
+            t.date,
+            c.type AS category_type,      -- ★ 収入 / 支出（カテゴリから取得）
+            t.amount,
+            t.memo,
+            u.username,
+            c.name AS category_name
+        FROM transactions t
+        LEFT JOIN users u ON t.user_id = u.id
+        LEFT JOIN categories c ON t.category_id = c.id
+        WHERE (t.user_id = %s OR %s IS NULL)
+        ORDER BY t.date DESC
+    """, (selected_user, selected_user))
     rows = cursor.fetchall()
 
     cursor.close()
@@ -148,58 +183,71 @@ def monthly_summary():
     # 開始日：前月25日
     start_date = datetime(prev_year, prev_month, 25)
     # 終了日：当月24日
-    end_date =  datetime(year, mon, 24)
+    end_date = datetime(year, mon, 24)
 
-    # --- 支出合計 ---
+    # --- 支出合計（categories.type = '支出'） ---
     if user_id:
         cursor.execute("""
-                       SELECT SUM(amount) FROM transactions
-                       WHERE date BETWEEN %s AND %s AND user_id = %s AND type = '支出'
-                       """, (start_date, end_date, user_id))
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE t.date BETWEEN %s AND %s
+              AND t.user_id = %s
+              AND c.type = '支出'
+        """, (start_date, end_date, user_id))
     else:
         cursor.execute("""
-                       SELECT SUM(amount) FROM transactions
-                       WHERE date BETWEEN %s AND %s AND type = '支出'
-                       """, (start_date, end_date))
-    expense_total = cursor.fetchone()[0] or 0
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE t.date BETWEEN %s AND %s
+              AND c.type = '支出'
+        """, (start_date, end_date))
+    expense_total = cursor.fetchone()[0]
 
-    # --- 収入合計 ---
+    # --- 収入合計（categories.type = '収入'） ---
     if user_id:
         cursor.execute("""
-                       SELECT SUM(amount) FROM transactions
-                       WHERE date BETWEEN %s AND %s AND user_id = %s AND type = '収入'
-                       """, (start_date, end_date, user_id))
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE t.date BETWEEN %s AND %s
+              AND t.user_id = %s
+              AND c.type = '収入'
+        """, (start_date, end_date, user_id))
     else:
         cursor.execute("""
-                       SELECT SUM(amount) FROM transactions
-                       WHERE date BETWEEN %s AND %s AND type = '収入'
-                       """, (start_date, end_date))
-    income_total = cursor.fetchone()[0] or 0
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE t.date BETWEEN %s AND %s
+              AND c.type = '収入'
+        """, (start_date, end_date))
+    income_total = cursor.fetchone()[0]
 
-    # --- カテゴリ別集計 ---
+    # --- カテゴリ別集計（categories.type を使用） ---
     if user_id:
-        # 特定ユーザーの集計
         cursor.execute("""
-                       SELECT c.name AS category_name, SUM(t.amount)
-                       FROM transactions t
-                       LEFT JOIN categories c ON t.category_id = c.id
-                       WHERE t.date BETWEEN %s AND %s AND t.user_id = %s
-                       GROUP BY t.category_id
-                       ORDER BY category_name
-                       """, (start_date, end_date, user_id))
+            SELECT c.name AS category_name, c.type AS category_type, SUM(t.amount)
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE t.date BETWEEN %s AND %s
+              AND t.user_id = %s
+            GROUP BY c.id
+            ORDER BY 2, 1   -- 2->category_name, 1->category_type
+        """, (start_date, end_date, user_id))
     else:
-        #全ユーザーの集計
         cursor.execute("""
-                       SELECT c.name AS category_name, SUM(t.amount)
-                       FROM transactions t
-                       LEFT JOIN categories c ON t.category_id = c.id
-                       WHERE date BETWEEN %s AND %s
-                       GROUP BY t.category_id
-                       ORDER BY category_name
-                       """, (start_date, end_date))
-        
+            SELECT c.name AS category_name, c.type AS category_type, SUM(t.amount)
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            WHERE t.date BETWEEN %s AND %s
+            GROUP BY c.id
+            ORDER BY 2, 1   -- 2->category_name, 1->category_type
+        """, (start_date, end_date))
+
     rows = cursor.fetchall()
-    
+
     cursor.close()
     conn.close()
 
@@ -254,55 +302,83 @@ def edit(id):
     # 編集対象の1件を取得
 
     cursor.execute("""
-                   SELECT id, date, category_id, amount, type, memo, user_id
+                   SELECT id, date, category_id, amount, memo, user_id
                    FROM transactions
                    WHERE id = %s
                    """, (id,))
     row = cursor.fetchone()
-    # row = (id, date, category_id, amount, type, memo, user_id)
+    # row = (id, date, category_id, amount, memo, user_id)
 
-    # カテゴリ一覧を取得（共通＋該当ユーザーのカテゴリ）
+    transaction_id = row[0]
+    date = row[1]
+    category_id = row[2]
+    amount = row[3]
+    memo = row[4]
+    user_id = row[5]
+
+    # ★ このトランザクションのカテゴリの type を取得
+    cursor.execute("SELECT type FROM categories WHERE id = %s", (category_id,))
+    selected_type = cursor.fetchone()[0]   # '収入' or '支出'
+
+    # カテゴリ一覧を取得（ユーザー + type で絞る）
     cursor.execute("""
                    SELECT id, name FROM categories
-                   WHERE user_id IS NULL OR user_id = %s
+                   WHERE (user_id IS NULL OR user_id = %s) AND type = %s
                    ORDER BY name
-                   """, (row[6],)) # row[6] = user_id
+                   """, (user_id, selected_type))
     categories = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    return render_template("edit.html", row=row, categories=categories)
+    return render_template(
+        "edit.html", 
+        id=transaction_id,
+        date=date,
+        amount=amount,
+        memo=memo,
+        user_id=user_id,
+        category_id=category_id,
+        categories=categories,
+        selected_type=selected_type
+        )
 
 @app.route("/update/<int:id>", methods=["POST"])
 def update(id):
-    
+
     print("FORM DATA:", request.form)
 
     date = request.form["date"]
     category_id = request.form["category_id"]
     amount = request.form["amount"]
-    type_ = request.form["type"]
     memo = request.form["memo"]
+    user_id = request.form["user_id"]   # hidden で送られてくる
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # ★ カテゴリから type（収入/支出）を取得
+    cursor.execute("SELECT type FROM categories WHERE id = %s", (category_id,))
+    category_type = cursor.fetchone()[0]
+
+    # ★ UPDATE（type はフォームから受け取らず、category_type を使う）
     cursor.execute("""
-                   UPDATE transactions
-                   SET date = %s,
-                       category_id = %s,
-                       amount = %s,
-                       type = %s,
-                       memo = %s
-                   WHERE id = %s
-                   """, (date, category_id, amount, type_, memo, id))
-    
+        UPDATE transactions
+        SET date = %s,
+            category_id = %s,
+            amount = %s,
+            type = %s,
+            memo = %s,
+            user_id = %s
+        WHERE id = %s
+    """, (date, category_id, amount, category_type, memo, user_id, id))
+
     conn.commit()
     cursor.close()
     conn.close()
 
     return redirect("/list")
+
 
 @app.route("/add-user", methods=["GET", "POST"])
 def add_user():
@@ -338,6 +414,7 @@ def add_category():
     # POST のとき
     name = request.form["name"]
     user_id = request.form["user_id"] 
+    type_value = request.form["type"] # ('収入' or '支出')
     
     if user_id == "":
         user_id = None   # 空なら共通カテゴリ
@@ -346,8 +423,13 @@ def add_category():
 
     # 重複チェック
     cursor.execute(
-        "SELECT COUNT(*) FROM categories WHERE name = %s AND (user_id = %s OR user_id IS NULL)",
-            (name, user_id)
+        """
+        SELECT COUNT(*) FROM categories
+        WHERE name = %s
+          AND type = %s
+          AND (user_id = %s OR user_id IS NULL)
+        """,
+        (name, type_value, user_id)
     )
     exists = cursor.fetchone()[0]
 
@@ -358,8 +440,8 @@ def add_category():
 
     # カテゴリ追加
     cursor.execute(
-        "INSERT INTO categories (name, user_id) VALUES (%s, %s)",
-        (name, user_id)
+        "INSERT INTO categories (name, user_id, type) VALUES (%s, %s, %s)",
+        (name, user_id, type_value)
     )
     conn.commit()
 
@@ -374,12 +456,13 @@ def categories_list():
     cursor = conn.cursor()
 
     cursor.execute("""
-                   SELECT c.id, c.name, u.username
-                   FROM categories c
-                   LEFT JOIN users u ON c.user_id = u.id
-                   ORDER BY u.username IS NOT NULL, u.username, c.name
-                   """)
+        SELECT c.id, c.name, u.username, c.type
+        FROM categories c
+        LEFT JOIN users u ON c.user_id = u.id
+        ORDER BY c.name
+    """)
     categories = cursor.fetchall()
+
 
     # print("=== DEBUG categories ===")
     # for row in categories:

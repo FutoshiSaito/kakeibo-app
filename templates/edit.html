@@ -17,22 +17,32 @@
 <!-- 🌸 白いカード（ふわっと影） -->
 <div class="card p-4 shadow-sm" style="border-radius:14px;">
 
-    <form action="/update/{{ row[0] }}" method="post">
+    <form action="/update/{{ id }}" method="post">
+
+        <!-- user_id（変更不可なので hidden） -->
+        <input type="hidden" name="user_id" value="{{ user_id }}">
 
         <!-- 日付 -->
         <div class="mb-3">
             <label class="form-label" style="color:#A27A85; font-weight:600;">日付</label>
             <input type="date" name="date" class="form-control"
-                   value="{{ row[1] }}" required style="border-radius:10px;">
+                   value="{{ date }}" required style="border-radius:10px;">
         </div>
 
-        <!-- カテゴリ -->
+        <!-- 種別（収入 / 支出） ※表示のみ -->
+        <div class="mb-3">
+            <label class="form-label" style="color:#A27A85; font-weight:600;">種別</label>
+            <input type="text" class="form-control" value="{{ selected_type }}"
+                   readonly style="border-radius:10px; background:#f8f8f8;">
+        </div>
+
+        <!-- カテゴリ（type に応じて絞られた一覧） -->
         <div class="mb-3">
             <label class="form-label" style="color:#A27A85; font-weight:600;">カテゴリ</label>
             <select name="category_id" class="form-select" required style="border-radius:10px;">
                 {% for cat in categories %}
                     <option value="{{ cat[0] }}"
-                        {% if cat[0] == row[2] %}selected{% endif %}>
+                        {% if cat[0] == category_id %}selected{% endif %}>
                         {{ cat[1] }}
                     </option>
                 {% endfor %}
@@ -43,23 +53,14 @@
         <div class="mb-3">
             <label class="form-label" style="color:#A27A85; font-weight:600;">金額</label>
             <input type="number" name="amount" class="form-control"
-                   value="{{ row[3] }}" required style="border-radius:10px;">
-        </div>
-
-        <!-- 入／出 -->
-        <div class="mb-3">
-            <label class="form-label" style="color:#A27A85; font-weight:600;">入／出</label>
-            <select name="type" class="form-select" required style="border-radius:10px;">
-                <option value="支出" {% if row[4] == '支出' %}selected{% endif %}>支出</option>
-                <option value="収入" {% if row[4] == '収入' %}selected{% endif %}>収入</option>
-            </select>
+                   value="{{ amount }}" required style="border-radius:10px;">
         </div>
 
         <!-- メモ -->
         <div class="mb-3">
             <label class="form-label" style="color:#A27A85; font-weight:600;">メモ</label>
             <textarea name="memo" class="form-control" rows="2"
-                      style="border-radius:10px;">{{ row[5] }}</textarea>
+                      style="border-radius:10px;">{{ memo }}</textarea>
         </div>
 
         <!-- ボタン -->
@@ -71,7 +72,7 @@
 
     <!-- 削除ボタン（優しいピンク系） -->
     <div class="d-flex justify-content-end mt-3">
-        <form action="/delete/{{ row[0] }}" method="post"
+        <form action="/delete/{{ id }}" method="post"
               onsubmit="return confirm('本当に削除しますか？');">
             <button type="submit" class="btn btn-danger px-4">削除する</button>
         </form>

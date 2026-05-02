@@ -49,6 +49,7 @@
             <thead style="background-color:#FCEFF4; color:#A27A85;">
                 <tr>
                     <th>カテゴリ</th>
+                    <th>入／出</th>
                     <th class="text-end">合計金額</th>
                 </tr>
             </thead>
@@ -56,7 +57,14 @@
                 {% for row in rows %}
                 <tr>
                     <td>{{ row[0] }}</td>
-                    <td class="text-end">{{ "{:,}".format(row[1]) }}</td>
+                    <td>
+                            {% if row[1] == '収入' %}
+                                <span style="color:#4CAF50; font-weight:600;">収入</span>
+                            {% else %}
+                                <span style="color:#E57373; font-weight:600;">支出</span>
+                            {% endif %}
+                    </td>
+                    <td class="text-end">{{ "{:,}".format(row[2]) }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
