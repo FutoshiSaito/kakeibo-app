@@ -44,7 +44,8 @@
     </div>
 
     <!-- テーブル -->
-    {% if rows %}
+    <h3 class="mt-5" style="color:#A27A85;">カテゴリ別の支出</h3>
+    {% if category_rows %}
         <table class="table table-hover align-middle">
             <thead style="background-color:#FCEFF4; color:#A27A85;">
                 <tr>
@@ -54,7 +55,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for row in rows %}
+                {% for row in category_rows %}
                 <tr>
                     <td>{{ row[0] }}</td>
                     <td>
@@ -72,6 +73,29 @@
     {% else %}
         <p class="text-muted">データがありません。</p>
     {% endif %}
+
+    <h3 class="mt-5" style="color:#A27A85;">決済別の支出</h3>
+    {% if payment_rows %}
+    <table class="table table-hover align-middle">
+        <thead style="background-color:#FCEFF4; color:#A27A85;">
+            <tr>
+                <th>決済手段</th>
+                <th class="text-end">支出合計</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in payment_rows %}
+            <tr>
+                <td>{{ row[0] or "未設定" }}</td>
+                <td class="text-end">{{ "{:,}".format(row[1]) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">データがありません。</p>
+    {% endif %}
+
 
     <!-- ボタン -->
     <div class="mt-3 d-flex">

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, session
-from datetime import datetime
+from datetime import datetime, date
 import os
 import mysql.connector
 
@@ -25,6 +25,7 @@ def add():
     amount = request.form["amount"]
     memo = request.form["memo"]
     user_id = request.form["user_id"]
+    payment_method_id = request.form.get("payment_method_id")
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -33,12 +34,16 @@ def add():
     cursor.execute("SELECT type FROM categories WHERE id = %s", (category_id,))
     category_type = cursor.fetchone()[0]
 
-    # ★ INSERT（type は category_type を使う）
+    # ★ 収入なら payment_method_id を None にする
+    if category_type == "収入":
+        payment_method_id = None
+
+    # ★ INSERT（payment_method_id を追加）
     sql = """
-        INSERT INTO transactions (user_id, date, category_id, amount, memo)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO transactions (user_id, date, category_id, payment_method_id, amount, memo)
+        VALUES (%s, %s, %s, %s, %s, %s)
     """
-    cursor.execute(sql, (user_id, date, category_id, amount, memo))
+    cursor.execute(sql, (user_id, date, category_id, payment_method_id, amount, memo))
 
     conn.commit()
     cursor.close()
@@ -50,8 +55,17 @@ def add():
 @app.route("/add", methods=["GET"])
 def add_form():
     user_id = request.args.get("user_id", None)
-    type_value = request.args.get("type", "None")
+    if not user_id:
+        user_id = session.get("selected_user")
+
+    type_value = request.args.get("type", None)
+    if not type_value:
+        type_value = "支出"
+
     date_value = request.args.get("date", "")
+    if not date_value:
+        date_value = date.today().strftime("%Y-%m-%d")
+
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -59,6 +73,16 @@ def add_form():
     # ユーザー覧
     cursor.execute("SELECT id, username FROM users")
     users = cursor.fetchall()
+
+    # ★ 決済手段一覧（追加）
+    cursor.execute("SELECT id, name FROM payment_methods ORDER BY sort_order")
+    payment_methods = cursor.fetchall()
+
+    default_pm_id = None
+    for pm in payment_methods:
+        if pm[1].lower() == "card":
+            default_pm_id = pm[0]
+            break
 
     #カテゴリ一覧
     if user_id and type_value:
@@ -98,9 +122,11 @@ def add_form():
         "add.html",
         users=users,
         categories=categories,
+        payment_methods=payment_methods,
         selected_user_id=user_id,
         selected_type=type_value,
-        selected_date=date_value
+        selected_date=date_value,
+        selected_payment_method_id = default_pm_id
         )
 
 @app.route("/list", methods=["GET", "POST"])
@@ -137,10 +163,12 @@ def list_records():
             t.amount,
             t.memo,
             u.username,
-            c.name AS category_name
+            c.name AS category_name,
+            pm.name AS payment_method_name
         FROM transactions t
         LEFT JOIN users u ON t.user_id = u.id
         LEFT JOIN categories c ON t.category_id = c.id
+        LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
         WHERE (t.user_id = %s OR %s IS NULL)
         ORDER BY t.date DESC
     """, (selected_user, selected_user))
@@ -245,8 +273,37 @@ def monthly_summary():
             GROUP BY c.id
             ORDER BY 2, 1   -- 2->category_name, 1->category_type
         """, (start_date, end_date))
+    category_rows = cursor.fetchall()
 
-    rows = cursor.fetchall()
+    # --- 決済手段別集計 ---
+    if user_id:
+        cursor.execute("""
+            SELECT 
+                pm.name AS payment_method,
+                SUM(t.amount) AS total_amount
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+            WHERE t.date BETWEEN %s AND %s
+            AND t.user_id = %s
+            AND c.type = '支出'
+            GROUP BY pm.id
+            ORDER BY total_amount DESC
+        """, (start_date, end_date, user_id))
+    else:
+        cursor.execute("""
+            SELECT 
+                pm.name AS payment_method,
+                SUM(t.amount) AS total_amount
+            FROM transactions t
+            JOIN categories c ON t.category_id = c.id
+            LEFT JOIN payment_methods pm ON t.payment_method_id = pm.id
+            WHERE t.date BETWEEN %s AND %s
+            AND c.type = '支出'
+            GROUP BY pm.id
+            ORDER BY total_amount DESC
+        """, (start_date, end_date))
+    payment_rows = cursor.fetchall()
 
     cursor.close()
     conn.close()
@@ -255,7 +312,8 @@ def monthly_summary():
 
     return render_template(
         "monthly_summary.html",
-        rows=rows,
+        category_rows=category_rows,
+        payment_rows=payment_rows,
         month=month,
         user_id=user_id,
         username=username,

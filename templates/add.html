@@ -10,10 +10,6 @@
     <span class="page-icon icon-violet"></span>
     家計簿入力
     </h1>
-
-    <!-- <h1 style="color:#F7DDE7; font-weight:700;">
-        🌸 家計簿入力
-    </h1> -->
     <p style="color:#A27A85; font-size:14px;">
         今日の記録をつけておこうね。
     </p>
@@ -48,7 +44,7 @@
     <!-- 種別（収入 / 支出） -->
     <div class="mb-3">
         <label class="form-label" style="color:#A27A85; font-weight:600;">種別</label>
-        <select name="type" class="form-control" style="border-radius:10px;"
+        <select name="type" id="type" class="form-control" style="border-radius:10px;"
                 onchange="
                     const date = document.querySelector('input[name=date]').value;
                     location.href = '/add?user_id={{ selected_user_id }}&type=' + this.value + '&date=' + date;
@@ -76,6 +72,19 @@
         <input type="number" name="amount" class="form-control" placeholder="例：1200" required style="border-radius:10px;">
     </div>
 
+    <!-- 決済手段 -->
+    <div class="mb-3">
+        <label class="form-label" style="color:#A27A85; font-weight:600;">決済手段</label>
+        <select name="payment_method_id" id="payment_method_id" class="form-select">
+            {% for pm in payment_methods %}
+                <option value="{{ pm[0] }}"
+                    {% if pm[1] == "Card" %}selected{% endif %}>
+                    {{ pm[1] }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
     <!-- メモ -->
     <div class="mb-3">
         <label class="form-label" style="color:#A27A85; font-weight:600;">メモ</label>
@@ -89,5 +98,29 @@
     </div>
 
 </form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const typeSelect = document.getElementById("type");
+    const pmSelect = document.getElementById("payment_method_id");
+
+    function updatePaymentMethod() {
+        if (typeSelect.value === "収入") {
+            pmSelect.disabled = true;
+            pmSelect.value = "";  // ★ 収入のときは値をクリア
+            pmSelect.classList.add("disabled");
+        } else {
+            pmSelect.disabled = false;
+            pmSelect.classList.remove("disabled");
+        }
+    }
+
+    // 初期状態の反映
+    updatePaymentMethod();
+
+    // 変更時の反映
+    typeSelect.addEventListener("change", updatePaymentMethod);
+});
+</script>
 
 {% endblock %}
