@@ -29,6 +29,8 @@
                    value="{{ date }}" required style="border-radius:10px;">
         </div>
 
+        <input type="hidden" id="category_type" value="{{ selected_type }}">
+
         <!-- 種別（収入 / 支出） ※表示のみ -->
         <div class="mb-3">
             <label class="form-label" style="color:#A27A85; font-weight:600;">種別</label>
@@ -57,7 +59,7 @@
         </div>
 
         <!-- 決済手段 -->
-        <div class="mb-3">
+        <div class="mb-3" id="payment_method_wrapper">
             <label class="form-label" style="color:#A27A85; font-weight:600;">決済手段</label>
             <select name="payment_method_id" id="payment_method_id" class="form-select">
                 {% for pm in payment_methods %}
@@ -92,5 +94,25 @@
     </div>
 
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const typeSelect = document.getElementById("category_type");
+    const pmWrapper = document.getElementById("payment_method_wrapper")
+    const pmSelect = document.getElementById("payment_method_id");
+
+    function updatePaymentMethod() {
+        if (typeSelect.value === "収入") {
+            pmWrapper.style.display = "none";
+            pmSelect.value == "";
+        } else {
+            pmWrapper.style.display = "block";
+        }
+    }
+
+    // 初期状態の反映
+    updatePaymentMethod();
+});
+</script>
 
 {% endblock %}

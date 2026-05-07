@@ -532,7 +532,7 @@ def categories_list():
         SELECT c.id, c.name, u.username, c.type
         FROM categories c
         LEFT JOIN users u ON c.user_id = u.id
-        ORDER BY c.name
+        ORDER BY c.type, c.name
     """)
     categories = cursor.fetchall()
 
