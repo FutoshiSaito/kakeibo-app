@@ -6,7 +6,7 @@
 
 <!-- 🌸 見出し（桜餅ピンク × かわいらしい） -->
 <div class="text-center mb-4">
-    <h1 style="color:#F7DDE7; font-weight:700;">
+    <h1 style="color:#e797c3; font-weight:700;">
         🌸 家計簿編集
     </h1>
     <p style="color:#A27A85; font-size:14px;">
@@ -54,6 +54,19 @@
             <label class="form-label" style="color:#A27A85; font-weight:600;">金額</label>
             <input type="number" name="amount" class="form-control"
                    value="{{ amount }}" required style="border-radius:10px;">
+        </div>
+
+        <!-- 決済手段 -->
+        <div class="mb-3">
+            <label class="form-label" style="color:#A27A85; font-weight:600;">決済手段</label>
+            <select name="payment_method_id" id="payment_method_id" class="form-select">
+                {% for pm in payment_methods %}
+                    <option value="{{ pm[0] }}"
+                        {% if payment_method_id == pm[0] %}selected{% endif %}>
+                        {{ pm[1] }}
+                    </option>
+                {% endfor %}
+            </select>
         </div>
 
         <!-- メモ -->

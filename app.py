@@ -360,12 +360,12 @@ def edit(id):
     # 編集対象の1件を取得
 
     cursor.execute("""
-                   SELECT id, date, category_id, amount, memo, user_id
+                   SELECT id, date, category_id, amount, memo, user_id, payment_method_id
                    FROM transactions
                    WHERE id = %s
                    """, (id,))
     row = cursor.fetchone()
-    # row = (id, date, category_id, amount, memo, user_id)
+    # row = (id, date, category_id, amount, memo, user_id, payment_method_id)
 
     transaction_id = row[0]
     date = row[1]
@@ -373,6 +373,7 @@ def edit(id):
     amount = row[3]
     memo = row[4]
     user_id = row[5]
+    payment_method_id = row[6]
 
     # ★ このトランザクションのカテゴリの type を取得
     cursor.execute("SELECT type FROM categories WHERE id = %s", (category_id,))
@@ -386,6 +387,13 @@ def edit(id):
                    """, (user_id, selected_type))
     categories = cursor.fetchall()
 
+    # 決済手段一覧を取得
+    cursor.execute("""
+                   SELECT id, name FROM payment_methods ORDER BY sort_order
+                   """)
+    payment_methods = cursor.fetchall()
+
+
     cursor.close()
     conn.close()
 
@@ -398,7 +406,9 @@ def edit(id):
         user_id=user_id,
         category_id=category_id,
         categories=categories,
-        selected_type=selected_type
+        selected_type=selected_type,
+        payment_method_id=payment_method_id,
+        payment_methods=payment_methods
         )
 
 @app.route("/update/<int:id>", methods=["POST"])
@@ -411,6 +421,7 @@ def update(id):
     amount = request.form["amount"]
     memo = request.form["memo"]
     user_id = request.form["user_id"]   # hidden で送られてくる
+    payment_method_id = request.form.get("payment_method_id")
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -419,17 +430,21 @@ def update(id):
     cursor.execute("SELECT type FROM categories WHERE id = %s", (category_id,))
     category_type = cursor.fetchone()[0]
 
+    # ★ 収入なら payment_method_id を None にする
+    if category_type == "収入":
+        payment_method_id = None
+
     # ★ UPDATE（type はフォームから受け取らず、category_type を使う）
     cursor.execute("""
         UPDATE transactions
         SET date = %s,
             category_id = %s,
+            payment_method_id = %s,
             amount = %s,
-            type = %s,
             memo = %s,
             user_id = %s
         WHERE id = %s
-    """, (date, category_id, amount, category_type, memo, user_id, id))
+    """, (date, category_id, payment_method_id, amount, memo, user_id, id))
 
     conn.commit()
     cursor.close()
