@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}決済手段追加{% endblock %}
+
+{% block content %}
+
+<div class="text-center mb-4">
+    <h1 style="color:#e797c3; font-weight:700;">
+        💳 決済手段の追加
+    </h1>
+    <p style="color:#A27A85; font-size:14px;">
+        新しい決済手段を登録できるよ。
+    </p>
+</div>
+
+<div class="card p-4 shadow-sm" style="border-radius:14px; max-width:500px; margin:auto;">
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form action="/admin/payments/add" method="post">
+
+        <!-- 決済手段名 -->
+        <div class="mb-3">
+            <label class="form-label" style="color:#A27A85; font-weight:600;">
+                決済手段名
+            </label>
+            <input type="text" name="name" class="form-control"
+                   value="{{ name if name else '' }}"
+                   required style="border-radius:10px;">
+        </div>
+
+        <button class="btn btn-primary w-100 mt-3">追加する</button>
+        <a href="/admin" class="btn btn-outline-secondary w-100 mt-3">戻る</a>
+
+    </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}ユーザー編集{% endblock %}
+
+{% block content %}
+
+<div class="text-center mb-4">
+    <h1 style="color:#e797c3; font-weight:700;">
+        👤 ユーザー編集
+    </h1>
+    <p style="color:#A27A85; font-size:14px;">
+        ユーザー名を変更できるよ。
+    </p>
+</div>
+
+<div class="card p-4 shadow-sm" style="border-radius:14px; max-width:500px; margin:auto;">
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form action="/admin/users/edit/{{ user.id }}" method="post">
+
+        <!-- ユーザー名 -->
+        <div class="mb-3">
+            <label class="form-label" style="color:#A27A85; font-weight:600;">
+                ユーザー名
+            </label>
+            <input type="text" name="username" class="form-control"
+                   value="{{ user.username }}"
+                   required style="border-radius:10px;">
+        </div>
+
+        <button class="btn btn-primary w-100 mt-3">更新する</button>
+        <a href="/admin" class="btn btn-outline-secondary w-100 mt-3">戻る</a>
+
+    </form>
+
+</div>
+
+{% endblock %}

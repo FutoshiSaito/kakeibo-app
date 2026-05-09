@@ -71,7 +71,7 @@ def add_form():
     cursor = conn.cursor()
 
     # ユーザー覧
-    cursor.execute("SELECT id, username FROM users")
+    cursor.execute("SELECT id, username FROM users ORDER BY id")
     users = cursor.fetchall()
 
     # ★ 決済手段一覧（追加）
@@ -140,7 +140,7 @@ def list_records():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT id, username FROM users")
+    cursor.execute("SELECT id, username FROM users ORDER BY id")
     users = cursor.fetchall()
 
     # print("selected_user =", selected_user, type(selected_user))
@@ -351,7 +351,7 @@ def select_month():
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("SELECT id, username FROM users")
+    cursor.execute("SELECT id, username FROM users ORDER BY id")
     users = cursor.fetchall()
 
     cursor.close()
@@ -360,19 +360,6 @@ def select_month():
     selected_user = session.get("selected_user")
 
     return render_template("select_month.html", users=users, selected_user=selected_user)
-
-@app.route("/delete/<int:id>", methods=["POST"])
-def delete(id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    cursor.execute("DELETE FROM transactions WHERE id = %s", (id,))
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/list")
 
 @app.route("/edit/<int:id>")
 def edit(id):
@@ -474,127 +461,360 @@ def update(id):
 
     return redirect("/list")
 
+@app.route("/admin/users/add", methods=["GET", "POST"])
+def admin_user_add():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
-@app.route("/add-user", methods=["GET", "POST"])
-def add_user():
     if request.method == "POST":
         username = request.form["username"]
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        # 重複チェック
+        cursor.execute("SELECT COUNT(*) AS cnt FROM users WHERE username = %s", (username,))
+        exists = cursor.fetchone()["cnt"]
 
+        if exists > 0:
+            cursor.close()
+            conn.close()
+            return render_template(
+                "admin_user_add.html",
+                error="同じユーザー名がすでに存在します。",
+                username=username
+            )
+        
+        # 追加
         cursor.execute("INSERT INTO users (username) VALUES (%s)", (username,))
         conn.commit()
 
         cursor.close()
         conn.close()
+
+        return redirect("/admin")
+    
+    cursor.close()
+    conn.close()
+    return render_template("admin_user_add.html")
+
+@app.route("/admin/users/edit/<int:user_id>", methods=["GET", "POST"])
+def admin_user_edit(user_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.close()
+        conn.close()
+        return "ユーザーが見つかりません。"
+    
+    if request.method == "POST":
+        username = request.form["username"]
+
+        # 重複チェック
+        cursor.execute("SELECT COUNT(*) AS cnt FROM users WHERE username = %s AND id != %s", (username, user_id))
+        exists = cursor.fetchone()["cnt"]
+
+        if exists > 0:
+            cursor.close()
+            conn.close()
+            return render_template(
+                "admin_user_edit.html",
+                user=user,
+                error="同じユーザー名がすでに存在します。"
+            )
         
-        return redirect("/select-month") # 登録後は月別集計画面へ
+        # 更新
+        cursor.execute("UPDATE users SET username = %s WHERE id = %s", (username, user_id))
+        conn.commit()
 
-    return render_template("add_user.html")
+        cursor.close()
+        conn.close()
 
-@app.route("/add-category", methods=["GET", "POST"])
-def add_category():
+        return redirect("/admin")
+    
+    cursor.close()
+    conn.close()
+    return render_template("admin_user_edit.html", user=user)
+
+@app.route("/admin/categories/add", methods=["GET", "POST"])
+def admin_category_add():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == "POST":
+        name = request.form["name"]
+        type_ = request.form["type"]
+
+        # 重複チェック
+        cursor.execute(
+            "SELECT COUNT(*) AS cnt FROM categories WHERE name = %s AND type = %s",
+            (name, type_)
+            )
+        exists = cursor.fetchone()["cnt"]
+
+        if exists > 0:
+            cursor.close()
+            conn.close()
+            return render_template(
+                "admin_category_add.html",
+                error="同じカテゴリがすでに存在します。",
+                name=name,
+                type=type_
+            )
+        
+        # 追加
+        cursor.execute(
+            "INSERT INTO categories (name, type) VALUES (%s, %s)",
+            (name, type_)
+        )
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return redirect("/admin")
+    
+    # GET
+    cursor.close()
+    conn.close()
+    return render_template("admin_category_add.html")
+
+@app.route("/admin/categories/edit/<int:cat_id>", methods=["GET", "POST"])
+def admin_categories_edit(cat_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # カテゴリ取得
+    cursor.execute("SELECT * FROM categories WHERE id = %s", (cat_id,))
+    category = cursor.fetchone()
+
+    if not category:
+        cursor.close()
+        conn.close()
+        return "カテゴリが見つかりません。"
+    
+    # POST（更新処理）
+    if request.method == "POST":
+        name = request.form["name"]
+        type_ = request.form["type"]
+
+        # 重複チェック
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS cnt
+            FROM categories
+            WHERE name = %s AND type = %s AND id != %s
+            """,
+            (name, type_, cat_id)
+        )
+        exists = cursor.fetchone()["cnt"]
+
+        if exists > 0:
+            cursor.close()
+            conn.close()
+            return render_template(
+                "admin_category_edit.html",
+                category=category,
+                error="同じカテゴリがすでに存在します。"
+            )
+        
+        # 更新
+        cursor.execute(
+            "UPDATE categories SET name = %s, type = %s WHERE id = %s",
+            (name, type_, cat_id)
+        )
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return redirect("/admin")
+    
+    # GET（編集画面表示）
+    cursor.close()
+    conn.close()
+    return render_template("admin_category_edit.html", category=category)
+
+@app.route("/admin/categories/delete/<int:cat_id>", methods=["GET", "POST"])
+def admin_category_delete(cat_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # GET のときはユーザー一覧を渡す
-    if request.method == "GET":
-        cursor.execute("SELECT id, username FROM users")
-        users = cursor.fetchall()
+    # 使われているカテゴリは削除不可（安全）
+    cursor.execute("SELECT COUNT(*) FROM transactions WHERE category_id = %s", (cat_id,))
+    used = cursor.fetchone()[0]
+
+    if used > 0:
         cursor.close()
         conn.close()
-        return render_template("add_category.html", users=users)
-
-    # POST のとき
-    name = request.form["name"]
-    user_id = request.form["user_id"] 
-    type_value = request.form["type"] # ('収入' or '支出')
+        return "このカテゴリは使用されているため削除できません。"
     
-    if user_id == "":
-        user_id = None   # 空なら共通カテゴリ
-    else:
-        user_id = int(user_id)
-
-    # 重複チェック
-    cursor.execute(
-        """
-        SELECT COUNT(*) FROM categories
-        WHERE name = %s
-          AND type = %s
-          AND (user_id = %s OR user_id IS NULL)
-        """,
-        (name, type_value, user_id)
-    )
-    exists = cursor.fetchone()[0]
-
-    if exists > 0:
-        cursor.close()
-        conn.close()
-        return "同じ名前のカテゴリがすでに存在します。"
-
-    # カテゴリ追加
-    cursor.execute(
-        "INSERT INTO categories (name, user_id, type) VALUES (%s, %s, %s)",
-        (name, user_id, type_value)
-    )
+    cursor.execute("DELETE FROM categories WHERE id = %s", (cat_id,))
     conn.commit()
 
     cursor.close()
     conn.close()
 
-    return redirect("/categories")
+    return redirect("/admin")
+
+@app.route("/admin/payments/add", methods=["GET", "POST"])
+def admin_payment_add():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if request.method == "POST":
+        name = request.form["name"]
+
+        # 重複チェック
+        cursor.execute(
+            "SELECT COUNT(*) AS cnt FROM payment_methods WHERE name = %s",
+            (name,)
+            )
+        exists = cursor.fetchone()["cnt"]
+
+        if exists > 0:
+            cursor.close()
+            conn.close()
+            return render_template(
+                "admin_payment_add.html",
+                error="同じ決済手段がすでに存在します。",
+                name=name
+            )
+        
+        # sort_order を自動採番（最大値＋１）
+        cursor.execute("SELECT COALESCE(MAX(sort_order), 0) AS max_order FROM payment_methods")
+        max_order = cursor.fetchone()["max_order"]
+        sort_order = max_order + 1
+        
+        # 追加
+        cursor.execute(
+            "INSERT INTO payment_methods (name, sort_order) VALUES (%s, %s)",
+            (name, sort_order)
+        )
+        conn.commit()
+
+        cursor.close()
+        conn.close()
+
+        return redirect("/admin")
     
-@app.route("/categories")
-def categories_list():
+    # GET
+    cursor.close()
+    conn.close()
+    return render_template("admin_payment_add.html")
+
+@app.route("/admin/payments/edit/<int:pay_id>")
+def admin_payment_edit(pay_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # 決済手段の取得
+    cursor.execute("SELECT * FROM payment_methods WHERE id = %s", (pay_id,))
+    payment = cursor.fetchone()
+
+    if not payment:
+        cursor.close()
+        conn.close()
+        return "決済手段が見つかりません。"
+    
+    # POST（更新処理）
+    if request.method == "POST":
+        name = request.form["name"]
+        sort_order = request.form["sort_order"]
+
+        # sort_oder が空なら None に
+        if sort_order == "":
+            sort_order = None
+        else:
+            sort_order = int(sort_order)
+
+        # 重複チェック
+        cursor.execute("""
+                       SELECT COUNT(*) AS cnt"
+                       FROM payment_methods
+                       WHERE name = %s AND id != %s
+                       """,
+                       (name, pay_id)
+                       )
+        exists = cursor.fetchone()["cnt"]
+
+        if exists > 0:
+            cursor.close()
+            conn.close()
+            return render_template(
+                "admin_payment_edit.html",
+                payment=payment,
+                error="同じ決済手段がすでに存在します。"
+            )
+        
+        # 更新
+        cursor.execute(
+            "UPDATE payment_methods SET name = %s, sort_order = %s WHERE id = %s",
+            (name, sort_order, pay_id)
+        )
+        conn.comitt()
+
+        cursor.close()
+        conn.close()
+
+        return redirect("/admin")
+    
+    # GET（編集画面表示）
+    cursor.close()
+    conn.close()
+    return render_template("admin_payment_edit.html", payment=payment)
+
+@app.route("/admin/payments/delete/<int:pay_id>", methods=["POST"])
+def admin_payment_delete(pay_id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT c.id, c.name, u.username, c.type
-        FROM categories c
-        LEFT JOIN users u ON c.user_id = u.id
-        ORDER BY c.type, c.name
-    """)
+    # 使われている決済手段は削除不可
+    cursor.execute("SELECT COUNT(*) FROM transactions WHERE payment_method_id = %s", (pay_id,))
+    used = cursor.fetchone()[0]
+
+    if used > 0:
+        cursor.close()
+        conn.close()
+        return "この決済手段は使用されているため削除できません。"
+    
+    cursor.execute("DELETE FROM payment_methods WHERE id = %s", (pay_id,))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect("/admin")
+
+@app.route("/admin")
+def admin_home():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # ユーザー一覧
+    cursor.execute("SELECT id, username FROM users ORDER BY id")
+    users = cursor.fetchall()
+
+    # カテゴリ一覧
+    cursor.execute("SELECT id, name, type FROM categories ORDER BY type, id")
     categories = cursor.fetchall()
 
-
-    # print("=== DEBUG categories ===")
-    # for row in categories:
-    #     print(row)
-    # print("========================")
+    # 決済手段一覧
+    cursor.execute("SELECT id, name, sort_order FROM payment_methods ORDER BY sort_order")
+    payments = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
-    return render_template("categories.html", categories=categories)
+    return render_template(
+        "admin.html",
+        users=users,
+        categories=categories,
+        payments=payments
+        )
 
-@app.route("/delete-category/<int:category_id>")
-def delete_category(category_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
 
-    # まず、そのカテゴリが transactions で使われていないか確認
-    cursor.execute("""
-                   SELECT COUNT(*) FROM transactions WHERE category = (
-                        SELECT name FROM categories WHERE id = %s
-                   )
-                   """, (category_id,))
-    count = cursor.fetchone()[0]
-
-    if count > 0:
-        cursor.close()
-        conn.close()
-        return "このカテゴリは使用されているので削除できません。"
-    
-    # 使われていなければ削除
-    cursor.execute("DELETE FROM categories WHERE id = %s", (category_id,))
-    conn.commit()
-
-    cursor.close()
-    conn.close()
-
-    return redirect("/categories")
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
