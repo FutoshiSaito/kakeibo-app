@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}カテゴリ追加{% endblock %}
+
+{% block content %}
+
+<div class="text-center mb-4">
+    <h1 style="color:#e797c3; font-weight:700;">
+        🗂️ カテゴリ追加
+    </h1>
+    <p style="color:#A27A85; font-size:14px;">
+        新しいカテゴリを登録できるよ。
+    </p>
+</div>
+
+<div class="card p-4 shadow-sm" style="border-radius:14px; max-width:500px; margin:auto;">
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form action="/admin/categories/add" method="post">
+
+        <!-- カテゴリ名 -->
+        <div class="mb-3">
+            <label class="form-label" style="color:#A27A85; font-weight:600;">
+                カテゴリ名
+            </label>
+            <input type="text" name="name" class="form-control"
+                   value="{{ name if name else '' }}"
+                   required style="border-radius:10px;">
+        </div>
+
+        <!-- 種別 -->
+        <div class="mb-3">
+            <label class="form-label" style="color:#A27A85; font-weight:600;">
+                種別
+            </label>
+            <select name="type" class="form-control" style="border-radius:10px;">
+                <option value="支出" {% if type == "支出" %}selected{% endif %}>支出</option>
+                <option value="収入" {% if type == "収入" %}selected{% endif %}>収入</option>
+            </select>
+        </div>
+
+        <button class="btn btn-primary w-100 mt-3">追加する</button>
+        <a href="/admin" class="btn btn-outline-secondary w-100 mt-3">戻る</a>
+
+    </form>
+
+</div>
+
+{% endblock %}

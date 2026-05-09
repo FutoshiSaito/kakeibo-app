@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}管理ページ{% endblock %}
+
+{% block content %}
+
+<div class="text-center mb-4">
+    <h1 style="color:#e797c3; font-weight:700;">🪻 管理のページ</h1>
+    <p style="color:#A27A85; font-size:14px;">ユーザー・カテゴリ・決済手段をまとめて管理できるよ。</p>
+</div>
+
+<div class="row g-4">
+
+    <!-- ユーザー管理 -->
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm" style="border-radius:14px;">
+            <h4 style="color:#A27A85; font-weight:600;">👤 ユーザー</h4>
+
+            <table class="table table-sm mt-2">
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>{{ u.username }}</td>
+                        <td class="text-end">
+                            <a href="/admin/users/edit/{{ u.id }}" class="btn btn-secondary btn-sm">編集</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+                    <tr>
+                        <td colspan="2">
+                            <a href="/admin/users/add" class="btn btn-success btn-sm mt-2">＋ 追加</a>
+                        </td>
+                    </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- カテゴリ管理 -->
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm" style="border-radius:14px;">
+            <h4 style="color:#A27A85; font-weight:600;">🗂️ カテゴリ</h4>
+
+            <table class="table table-sm mt-2">
+                <tbody>
+                    {% for c in categories %}
+                    <tr>
+                        <td>{{ c.name }}</td>
+                        <td>{{ c.type }}</td>
+                        <td class="text-end">
+                            <a href="/admin/categories/edit/{{ c.id }}" class="btn btn-secondary btn-sm">編集</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <tr>
+                        <td colspan="2">
+                            <a href="/admin/categories/add" class="btn btn-success btn-sm mt-2">＋ 追加</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 決済手段管理 -->
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm" style="border-radius:14px;">
+            <h4 style="color:#A27A85; font-weight:600;">💳 決済手段</h4>
+
+            <table class="table table-sm mt-2">
+                <tbody>
+                    {% for p in payments %}
+                    <tr>
+                        <td>{{ p.name }}</td>
+                        <td class="text-end">
+                            <a href="/admin/payments/edit/{{ p.id }}" class="btn btn-secondary btn-sm">編集</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <tr>
+                        <td clospan="2">
+                            <a href="/admin/payments/add" class="btn btn-success btn-sm mt-2">＋ 追加</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
