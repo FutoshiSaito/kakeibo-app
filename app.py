@@ -177,6 +177,28 @@ def list_records():
     cursor.close()
     conn.close()
 
+    def calc_group_index(date_obj):
+        # 25日締めの月グループを計算
+        year = date_obj.year
+        month = date_obj.month
+        day = date_obj.day
+
+        # 25日より前なら前月扱い
+        if day < 25:
+            if month == 1:
+                year -= 1
+                month = 12
+            else:
+                month -= 1
+
+        # 年×12 + 月 で一意の番号にする
+        return int(year * 12 + month)
+
+    from datetime import datetime
+    for row in rows:
+        date_obj = row["date"]  # datetime.date 型
+        row["group_index"] = calc_group_index(date_obj)
+
     return render_template("list.html", rows=rows, users=users, selected_user=selected_user)
 
 @app.route("/monthly-summary")
