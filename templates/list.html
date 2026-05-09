@@ -51,7 +51,7 @@
 
             <tbody>
                 {% for row in rows %}
-                    <tr>
+                    <tr class="{% if row.group_index % 2 == 1 %}bg-soft{% endif %}">
                         <td>{{ row.date }}</td>
                         <td>{{ row.username or ''}}</td>
                         <td>
