@@ -19,7 +19,7 @@ def index():
     return redirect("/list")
 
 @app.route("/add", methods=["POST"])
-def add():
+def add_records():
     date = request.form["date"]
     category_id = request.form["category_id"]
     amount = request.form["amount"]
@@ -53,7 +53,7 @@ def add():
 
 
 @app.route("/add", methods=["GET"])
-def add_form():
+def add_records_form():
     user_id = request.args.get("user_id", None)
     if not user_id:
         user_id = session.get("selected_user")
@@ -177,13 +177,13 @@ def list_records():
     cursor.close()
     conn.close()
 
+    from datetime import date
+
     def calc_group_index(date_obj):
-        # 25日締めの月グループを計算
         year = date_obj.year
         month = date_obj.month
         day = date_obj.day
 
-        # 25日より前なら前月扱い
         if day < 25:
             if month == 1:
                 year -= 1
@@ -191,15 +191,20 @@ def list_records():
             else:
                 month -= 1
 
-        # 年×12 + 月 で一意の番号にする
         return int(year * 12 + month)
 
-    from datetime import datetime
-    for row in rows:
-        date_obj = row["date"]  # datetime.date 型
-        row["group_index"] = calc_group_index(date_obj)
+    # 今月の group_index を計算
+    today = date.today()
+    current_group_index = calc_group_index(today)
 
-    return render_template("list.html", rows=rows, users=users, selected_user=selected_user)
+    # rows に group_index を付与
+    for row in rows:
+        row["group_index"] = calc_group_index(row["date"])
+
+    # テンプレートに渡す
+    return render_template("list.html",
+                        rows=rows,
+                        current_group_index=current_group_index)
 
 @app.route("/monthly-summary")
 def monthly_summary():
@@ -359,10 +364,16 @@ def select_month():
 
     selected_user = session.get("selected_user")
 
-    return render_template("select_month.html", users=users, selected_user=selected_user)
+    from datetime import date
+
+    # ★ 今月の YYYY-MM を作る
+    today = date.today()
+    default_month = today.strftime("%Y-%m")
+
+    return render_template("select_month.html", users=users, selected_user=selected_user, default_month=default_month)
 
 @app.route("/edit/<int:id>")
-def edit(id):
+def edit_records(id):
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -421,7 +432,7 @@ def edit(id):
         )
 
 @app.route("/update/<int:id>", methods=["POST"])
-def update(id):
+def update_records(id):
 
     print("FORM DATA:", request.form)
 
@@ -460,6 +471,30 @@ def update(id):
     conn.close()
 
     return redirect("/list")
+
+@app.route('/delete/<int:id>', methods=['POST'])
+def delete_records(id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # 該当データが存在するかチェック
+    cursor.execute("SELECT * FROM transactions WHERE id = %s", (id,))
+    item = cursor.fetchone()
+
+    if not item:
+        cursor.close()
+        conn.close()
+        return "データが存在しません。"
+
+    # 削除処理
+    cursor.execute("DELETE FROM transactions WHERE id = %s", (id,))
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect('/list')  # 一覧ページに戻る
+
 
 @app.route("/admin/users/add", methods=["GET", "POST"])
 def admin_user_add():
